@@ -21,45 +21,19 @@ db.once('open', () => {
 });
 
 // Define schemas and models
-const similarUserSchema = new mongoose.Schema({
-  username: String
-});
-
-const wordFrequencySchema = new mongoose.Schema({
-  word: String,
-  frequency: Number
-});
-
 const transcriptionSchema = new mongoose.Schema({
   text: String,
   createdAt: { type: Date, default: Date.now }
 });
 
-const SimilarUser = mongoose.model('SimilarUser', similarUserSchema);
-const WordFrequency = mongoose.model('WordFrequency', wordFrequencySchema);
+const similarUserSchema = new mongoose.Schema({
+  username: String
+});
+
 const Transcription = mongoose.model('Transcription', transcriptionSchema);
+const SimilarUser = mongoose.model('SimilarUser', similarUserSchema);
 
 // Routes
-app.get('/similar-users', async (req, res) => {
-  try {
-    const users = await SimilarUser.find();
-    res.status(200).json(users);
-  } catch (error) {
-    console.error('Error fetching similar users:', error);
-    res.status(500).send('Internal Server Error');
-  }
-});
-
-app.get('/word-frequencies', async (req, res) => {
-  try {
-    const frequencies = await WordFrequency.find();
-    res.status(200).json(frequencies);
-  } catch (error) {
-    console.error('Error fetching word frequencies:', error);
-    res.status(500).send('Internal Server Error');
-  }
-});
-
 app.post('/transcriptions', async (req, res) => {
   try {
     const { transcription } = req.body;
@@ -70,31 +44,26 @@ app.post('/transcriptions', async (req, res) => {
     const newTranscription = new Transcription({ text: transcription });
     await newTranscription.save();
 
-    const words = transcription.split(' ');
-    for (const word of words) {
-      const existingWord = await WordFrequency.findOne({ word });
-      if (existingWord) {
-        existingWord.frequency += 1;
-        await existingWord.save();
-      } else {
-        const newWord = new WordFrequency({ word, frequency: 1 });
-        await newWord.save();
-      }
-    }
-
-    res.status(201).send('Transcription added and word frequencies updated');
+    res.status(201).send('Transcription added');
   } catch (error) {
     console.error('Error adding transcription:', error);
     res.status(500).send('Internal Server Error');
   }
 });
 
-app.get('/transcriptions', async (req, res) => {
+app.post('/similar-users', async (req, res) => {
   try {
-    const transcriptions = await Transcription.find();
-    res.status(200).json(transcriptions);
+    const { username } = req.body;
+    if (!username) {
+      return res.status(400).send('Username is required');
+    }
+
+    const newSimilarUser = new SimilarUser({ username });
+    await newSimilarUser.save();
+
+    res.status(201).send('Similar user added');
   } catch (error) {
-    console.error('Error fetching transcriptions:', error);
+    console.error('Error adding similar user:', error);
     res.status(500).send('Internal Server Error');
   }
 });

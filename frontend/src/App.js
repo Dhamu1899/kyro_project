@@ -10,48 +10,46 @@ import './App.css';
 
 const App = () => {
   const [transcriptions, setTranscriptions] = useState([]);
-  const [wordFrequencies, setWordFrequencies] = useState([]);
   const [similarUsers, setSimilarUsers] = useState([]);
 
-  // Function to fetch word frequencies from backend
-  const fetchWordFrequencies = async () => {
-    try {
-      const response = await fetch('http://localhost:5000/word-frequencies');
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Failed to fetch word frequencies: ${response.status} ${response.statusText} - ${errorText}`);
-      }
-      const wordFrequenciesData = await response.json();
-      setWordFrequencies(wordFrequenciesData);
-    } catch (error) {
-      console.error('Error fetching word frequencies:', error);
-    }
-  };
-
-  // Function to fetch similar users from backend
-  const fetchSimilarUsers = async () => {
-    try {
-      const response = await fetch('http://localhost:5000/similar-users');
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Failed to fetch similar users: ${response.status} ${response.statusText} - ${errorText}`);
-      }
-      const similarUsersData = await response.json();
-      setSimilarUsers(similarUsersData);
-    } catch (error) {
-      console.error('Error fetching similar users:', error);
-    }
-  };
-
-  // Effect to fetch initial data
-  useEffect(() => {
-    fetchWordFrequencies();
-    fetchSimilarUsers();
-  }, []);
-
   // Function to add transcription
-  const addTranscription = (transcription) => {
-    setTranscriptions([...transcriptions, transcription]);
+  const addTranscription = async (transcription) => {
+    try {
+      const response = await fetch('http://localhost:5000/transcriptions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ transcription }),
+      });
+      if (!response.ok) {
+        throw new Error('Failed to save transcription');
+      }
+      await response.text(); // Assuming response is just a success message
+      setTranscriptions([...transcriptions, transcription]);
+    } catch (error) {
+      console.error('Error saving transcription:', error);
+    }
+  };
+
+  // Function to add similar user
+  const addSimilarUser = async (username) => {
+    try {
+      const response = await fetch('http://localhost:5000/similar-users', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username }),
+      });
+      if (!response.ok) {
+        throw new Error('Failed to save similar user');
+      }
+      await response.text(); // Assuming response is just a success message
+      setSimilarUsers([...similarUsers, username]);
+    } catch (error) {
+      console.error('Error saving similar user:', error);
+    }
   };
 
   return (
@@ -74,7 +72,7 @@ const App = () => {
             <UniquePhrases transcriptions={transcriptions} />
           </Grid>
           <Grid item xs={12} md={6}>
-            <SimilarUsers similarUsers={similarUsers} />
+            <SimilarUsers similarUsers={similarUsers} addSimilarUser={addSimilarUser} />
           </Grid>
         </Grid>
       </Container>
